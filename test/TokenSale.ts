@@ -4,9 +4,19 @@ const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 const TEST_RATIO = 10n;
 const TEST_PRICE = 5n;
+const TEST_NAME = "MyToken";
+const TEST_SYMBOL = "MTK";
+
 
 async function deployFunction(){
-    const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO, TEST_PRICE]);
+    const [ deployer ] = await viem.getWalletClients();
+    const paymentTokenContract =  await viem.deployContract("MyToken");
+    const tokenSaleContract = await viem.deployContract("TokenSale", [
+        TEST_RATIO, 
+        TEST_PRICE,
+        paymentTokenContract.address,
+        deployer.account.address
+    ]);
     return { tokenSaleContract }
 }
 
@@ -23,7 +33,21 @@ describe("NFT Shop", async () => {
             expect (ratio).eq(TEST_PRICE);
         });
         it("uses a valid ERC20 as payment token", async () => {
-            throw new Error("Not implemented");
+            const { tokenSaleContract } = await loadFixture(deployFunction);
+            const tokenContractAddress = await tokenSaleContract.read.paymentToken();
+            const tokenContract = await viem.getContractAt("MyToken", tokenContractAddress);
+
+            const [name, symbol, decimals, totalSupply] = await Promise.all([
+                tokenContract.read.name(),
+                tokenContract.read.symbol(),
+                tokenContract.read.decimals(),
+                tokenContract.read.totalSupply(),
+            ]);
+
+            expect(name).to.eq(TEST_NAME);
+            expect(symbol).to.eq(TEST_SYMBOL);
+            expect(decimals).to.eq(18);
+            expect(totalSupply).to.eq(0n);
         });
         it("uses a valid ERC721 as NFT collection", async () => {
             throw new Error("Not implemented");
