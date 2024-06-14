@@ -2,16 +2,19 @@ import { expect } from "chai";
 import { viem } from "hardhat";
 
 const TEST_RATIO = 10n;
+const TEST_PRICE = 5n;
 
 describe("NFT Shop", async () => {
     describe("When the Shop contract is deployed", async () => {
         it("defines the ratio as provided in parameters", async () => {
-            const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO]);
+            const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO, TEST_PRICE]);
             const ratio = await tokenSaleContract.read.ratio();
             expect (ratio).eq(TEST_RATIO);
         })
         it("defines the price as provided in parameters", async () => {
-            throw new Error("Not implemented");
+            const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO, TEST_PRICE]);
+            const ratio = await tokenSaleContract.read.price();
+            expect (ratio).eq(TEST_PRICE);
         });
         it("uses a valid ERC20 as payment token", async () => {
             throw new Error("Not implemented");
