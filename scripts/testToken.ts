@@ -1,4 +1,4 @@
-import { viem,  } from "hardhat";
+import { viem  } from "hardhat";
 import { parseEther, formatUnits } from "viem";
 
 async function main() {
