@@ -1,18 +1,24 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 const TEST_RATIO = 10n;
 const TEST_PRICE = 5n;
 
+async function deployFunction(){
+    const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO, TEST_PRICE]);
+    return { tokenSaleContract }
+}
+
 describe("NFT Shop", async () => {
     describe("When the Shop contract is deployed", async () => {
         it("defines the ratio as provided in parameters", async () => {
-            const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO, TEST_PRICE]);
+            const { tokenSaleContract } = await loadFixture(deployFunction);
             const ratio = await tokenSaleContract.read.ratio();
             expect (ratio).eq(TEST_RATIO);
         })
         it("defines the price as provided in parameters", async () => {
-            const tokenSaleContract = await viem.deployContract("TokenSale", [TEST_RATIO, TEST_PRICE]);
+            const { tokenSaleContract } = await loadFixture(deployFunction);
             const ratio = await tokenSaleContract.read.price();
             expect (ratio).eq(TEST_PRICE);
         });
