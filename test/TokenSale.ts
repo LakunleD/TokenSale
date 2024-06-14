@@ -10,7 +10,7 @@ describe("NFT Shop", async () => {
             const ratio = await tokenSaleContract.read.ratio();
             expect (ratio).eq(TEST_RATIO);
         })
-        it("defines the price as provided in parameters", async () => {g
+        it("defines the price as provided in parameters", async () => {
             throw new Error("Not implemented");
         });
         it("uses a valid ERC20 as payment token", async () => {
