@@ -6,18 +6,42 @@ const TEST_RATIO = 10n;
 const TEST_PRICE = 5n;
 const TEST_NAME = "MyToken";
 const TEST_SYMBOL = "MTK";
+const TEST_NFT_NAME = "MyNFT";
+const TEST_NFT_SYMBOL = "NFT";
+const TEST_BUY_TOKENS_VALUE = 1n;
 
 
 async function deployFunction(){
-    const [ deployer ] = await viem.getWalletClients();
-    const paymentTokenContract =  await viem.deployContract("MyToken");
+    const publicClient = await viem.getPublicClient();
+    const [ deployer, acc1, acc2 ] = await viem.getWalletClients();
+    const tokenContract =  await viem.deployContract("MyToken");
+    const nftContract = await viem.deployContract("MyNFT");
     const tokenSaleContract = await viem.deployContract("TokenSale", [
         TEST_RATIO, 
         TEST_PRICE,
-        paymentTokenContract.address,
-        deployer.account.address
+        tokenContract.address,
+        nftContract.address
     ]);
-    return { tokenSaleContract }
+
+    const code = await tokenContract.read.MINTER_ROLE();
+
+    // Giving role
+    const roleTx = await tokenContract.write.grantRole([
+        code,
+        tokenSaleContract.address,
+    ]);
+
+    await publicClient.getTransactionReceipt({ hash: roleTx });
+
+    return { 
+        publicClient,
+        deployer,
+        acc1,
+        acc2,
+        tokenContract,
+        nftContract,
+        tokenSaleContract
+     }
 }
 
 describe("NFT Shop", async () => {
@@ -58,7 +82,20 @@ describe("NFT Shop", async () => {
             throw new Error("Not implemented");
         })
         it("gives the correct amount of tokens", async () => {
-            throw new Error("Not implemented");
+            const { tokenSaleContract, acc1, publicClient, tokenContract } = await loadFixture(deployFunction);
+            const balanceBefore = await tokenContract.read.balanceOf([acc1.account.address]);
+
+            const buyTokensTx = await tokenSaleContract.write.buyTokens({ 
+                value: TEST_BUY_TOKENS_VALUE,
+                account: acc1.account,
+            });
+            await publicClient.getTransactionReceipt({ hash: buyTokensTx });
+            const balanceAfter = await tokenContract.read.balanceOf([acc1.account.address]);
+
+        
+            const diff = balanceAfter - balanceBefore;
+            expect(diff).to.eq(TEST_BUY_TOKENS_VALUE * TEST_RATIO);
+
         });
     })
     describe("When a user burns an ERC20 at the Shop contract", async () => {

@@ -17,4 +17,7 @@ contract TokenSale {
         nftContract = _nftContract;
     }
     
+    function buyTokens()  external payable {
+        paymentToken.mint(msg.sender, msg.value * ratio);
+    }
 }
