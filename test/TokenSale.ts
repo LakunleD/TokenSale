@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { viem } from "hardhat";
+import { parseEther } from "viem";
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 
 const TEST_RATIO = 10n;
@@ -8,7 +9,7 @@ const TEST_NAME = "MyToken";
 const TEST_SYMBOL = "MTK";
 const TEST_NFT_NAME = "MyNFT";
 const TEST_NFT_SYMBOL = "NFT";
-const TEST_BUY_TOKENS_VALUE = 1n;
+const TEST_BUY_TOKENS_VALUE = parseEther("5");
 
 
 async function deployFunction(){
@@ -94,7 +95,7 @@ describe("NFT Shop", async () => {
 
         
             const diff = balanceAfter - balanceBefore;
-            expect(diff).to.eq(TEST_BUY_TOKENS_VALUE * TEST_RATIO);
+            expect(diff).to.eq((TEST_BUY_TOKENS_VALUE * TEST_RATIO));
 
         });
     })
@@ -103,7 +104,35 @@ describe("NFT Shop", async () => {
             throw new Error("Not implemented");
         })
         it("burns the correct amount of tokens", async () => {
-            throw new Error("Not implemented");
+            const { tokenSaleContract, acc1, publicClient, tokenContract } = await loadFixture(deployFunction);
+
+            const buyTokensTx = await tokenSaleContract.write.buyTokens({ 
+                value: TEST_BUY_TOKENS_VALUE,
+                account: acc1.account,
+            });
+            await publicClient.getTransactionReceipt({ hash: buyTokensTx });
+
+            const balanceBeforeBurn = await tokenContract.read.balanceOf([acc1.account.address]);
+
+            const approveTokensTx = await tokenContract.write.approve(
+                [tokenSaleContract.address, balanceBeforeBurn / 2n],
+                {
+                    account: acc1.account,
+                }
+            );
+            await publicClient.getTransactionReceipt({ hash: approveTokensTx });
+
+            const burnTokensTx = await tokenSaleContract.write.returnTokens([ 
+                balanceBeforeBurn / 2n 
+            ], 
+            {
+                account: acc1.account,
+            });
+            await publicClient.getTransactionReceipt({ hash: burnTokensTx });
+
+            const balanceAfterBurn = await tokenContract.read.balanceOf([acc1.account.address]);
+            const diff = balanceBeforeBurn - balanceAfterBurn;
+            expect(diff).to.eq(balanceBeforeBurn / 2n);
         });
     })
     describe("When a user buys an NFT from the Shop contract", async () => {
